@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Desafío Fenner
 
-## Getting Started
+Sistema de gamificación escolar del **Liceo Bicentenario Industrial Ing. Ricardo Fenner Ruedi**.
+Cada curso de 2° medio compite durante el semestre acumulando puntos por buenas
+conductas en seis áreas. Dos monedas: **Puntaje General** (ranking, no se gasta) y
+**XP / Puntos Fenner** (canjeables por premios).
 
-First, run the development server:
+## Stack
+
+Next.js 15 (App Router) · React 19 · TypeScript · TailwindCSS v4 · shadcn/ui ·
+Supabase (PostgreSQL, Auth, Storage, Realtime, RLS) · Server Actions · Zod ·
+React Hook Form · TanStack Query.
+
+## Puesta en marcha
+
+### 1. Instalar dependencias
+
+```bash
+npm install
+```
+
+### 2. Crear el proyecto en Supabase
+
+1. Crea un proyecto en <https://supabase.com>.
+2. Copia `.env.local.example` a `.env.local` y completa:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY` (opcional, para scripts server-side)
+
+### 3. Aplicar las migraciones
+
+Ejecuta, **en orden**, el contenido de `supabase/migrations/` en el
+**SQL Editor** del panel de Supabase:
+
+| Archivo | Contenido |
+| --- | --- |
+| `0001_schema.sql` | Tipos, tablas, índices, FKs, constraints |
+| `0002_functions_triggers.sql` | Funciones, triggers, RPC (`submit_evaluation`, `request_redemption`, `decide_redemption`) |
+| `0003_rls.sql` | Row Level Security + vistas de ranking |
+| `0004_storage.sql` | Buckets de Storage + policies |
+| `0005_seed.sql` | Áreas, rúbrica completa, premios, catálogo de penalizaciones, semestre y cursos |
+
+> Alternativa con Supabase CLI (si la instalas):
+> `npx supabase link --project-ref <ref>` y luego `npx supabase db push`.
+
+### 4. Crear el primer usuario administrador
+
+En **Authentication → Users → Add user** del panel de Supabase, crea un usuario
+con correo y contraseña. El trigger `handle_new_user` creará su `profile`
+automáticamente con rol `profesor`. Para promoverlo a administrador, en el SQL
+Editor:
+
+```sql
+update public.profiles set role = 'administrador' where email = 'tu-correo@industrialfenner.cl';
+```
+
+### 5. Levantar el entorno de desarrollo
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abre <http://localhost:3000>. Serás redirigido a `/login`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Modelo de puntaje
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Evaluaciones semanales** (nivel 1/2/3 = 10/20/30 pts): suman a **General** y a **XP**.
+- **Bonos, penalizaciones, reciclaje**: afectan solo el **General**.
+- **Canjes**: descuentan solo **XP**.
+- `score_events` es el libro mayor (ledger) append-only y única fuente de verdad.
+- `course_standings` es la tabla derivada (mantenida por trigger) que alimenta el
+  ranking en tiempo real vía Supabase Realtime.
 
-## Learn More
+## Roles
 
-To learn more about Next.js, take a look at the following resources:
+Administrador · Profesor · Convivencia Escolar · Inspectoría · Residencia · Dirección.
+La autorización se aplica en **RLS** y en las funciones **RPC**, no solo en el frontend.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run dev        # desarrollo
+npm run build      # build de producción
+npm run lint       # ESLint
+npm run typecheck  # TypeScript sin emitir
+```
