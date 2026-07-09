@@ -84,7 +84,7 @@ export default async function RankingPage() {
       <>
         <PageHeader
           title="Ranking"
-          description={`Resultados oficiales del ${semester.name}. Se publican los viernes a las 12:00.`}
+          description={`Puntaje acumulado de todo el ${semester.name} — el curso con más puntos al cierre gana el gran premio. Se publica los viernes a las 12:00.`}
         />
         {snapshot ? (
           <PublishedRanking

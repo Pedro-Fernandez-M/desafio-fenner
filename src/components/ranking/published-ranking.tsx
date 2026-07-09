@@ -38,7 +38,7 @@ export function PublishedRanking({
     <div className="space-y-4">
       <div className="text-muted-foreground flex items-center gap-1.5 text-sm">
         <CalendarClock className="size-4" />
-        Semana {weekNumber} · publicado el{" "}
+        Puntaje acumulado del semestre · publicación de la semana {weekNumber} ·{" "}
         {new Date(publishedAt).toLocaleDateString("es-CL", {
           weekday: "long",
           day: "numeric",
@@ -54,7 +54,9 @@ export function PublishedRanking({
             <TableRow>
               <TableHead className="w-14">#</TableHead>
               <TableHead>Curso</TableHead>
-              <TableHead className="text-right">Puntaje General</TableHead>
+              <TableHead className="text-right">
+                Puntaje General (acumulado)
+              </TableHead>
               <TableHead className="text-right">XP disponibles</TableHead>
             </TableRow>
           </TableHeader>

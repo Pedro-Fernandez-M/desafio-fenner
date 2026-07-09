@@ -127,7 +127,9 @@ export function RankingView({
             <TableRow>
               <TableHead className="w-14">#</TableHead>
               <TableHead>Curso</TableHead>
-              <TableHead className="text-right">Puntaje General</TableHead>
+              <TableHead className="text-right">
+                Puntaje General (acumulado)
+              </TableHead>
               <TableHead className="text-right">XP disponibles</TableHead>
             </TableRow>
           </TableHeader>
