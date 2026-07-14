@@ -2,8 +2,8 @@ import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 import type { Database } from "@/lib/database.types"
 
-/** Rutas que no requieren sesión. */
-const PUBLIC_PATHS = ["/login", "/auth"]
+/** Rutas que no requieren sesión (incluye el marcador público de estudiantes). */
+const PUBLIC_PATHS = ["/login", "/auth", "/puntajes"]
 
 /**
  * Refresca la sesión de Supabase en cada request y protege las rutas privadas.

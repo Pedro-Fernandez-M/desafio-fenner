@@ -1,3 +1,6 @@
+import Link from "next/link"
+import { Trophy } from "lucide-react"
+
 import { LoginForm } from "@/components/auth/login-form"
 
 export const metadata = { title: "Ingresar · Desafío Fenner" }
@@ -48,6 +51,15 @@ export default function LoginPage() {
             </p>
           </div>
           <LoginForm />
+          <p className="text-center">
+            <Link
+              href="/puntajes"
+              className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm underline-offset-4 hover:underline"
+            >
+              <Trophy className="size-4 text-amber-500" />
+              Ver el marcador del Desafío (sin ingresar)
+            </Link>
+          </p>
         </div>
       </div>
     </main>
