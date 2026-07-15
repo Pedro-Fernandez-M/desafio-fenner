@@ -71,7 +71,7 @@ export default async function EvaluarPage() {
     )
   }
 
-  const [{ data: courses }, { data: areasRaw }] = await Promise.all([
+  const [{ data: allCourses }, { data: areasRaw }] = await Promise.all([
     supabase
       .from("courses")
       .select("id, name")
@@ -85,6 +85,17 @@ export default async function EvaluarPage() {
       .order("order_index"),
   ])
 
+  // Los profesores solo ven (y el RPC solo acepta) sus cursos asignados.
+  let courses = allCourses ?? []
+  if (profile.role === "profesor") {
+    const { data: assigned } = await supabase
+      .from("teacher_courses")
+      .select("course_id")
+      .eq("teacher_id", profile.id)
+    const allowed = new Set((assigned ?? []).map((a) => a.course_id))
+    courses = courses.filter((c) => allowed.has(c.id))
+  }
+
   const allAreas = (areasRaw ?? []) as unknown as AreaRow[]
   const isAdmin = profile.role === "administrador"
   const myGroup = groupForRole(profile.role)
@@ -92,7 +103,7 @@ export default async function EvaluarPage() {
   const profAreas = areasForGroup(allAreas, "profesores")
   const convAreas = areasForGroup(allAreas, "convivencia")
 
-  const noCourses = (courses ?? []).length === 0
+  const noCourses = courses.length === 0
 
   if (noCourses || (!isAdmin && !myGroup)) {
     return (
@@ -103,7 +114,9 @@ export default async function EvaluarPage() {
           <AlertTitle>Nada para registrar</AlertTitle>
           <AlertDescription>
             {noCourses
-              ? "No hay cursos activos configurados."
+              ? profile.role === "profesor"
+                ? "Aún no tienes cursos asignados. Contacta al administrador."
+                : "No hay cursos activos configurados."
               : "Tu rol no tiene indicadores asignados."}
           </AlertDescription>
         </Alert>
@@ -117,7 +130,7 @@ export default async function EvaluarPage() {
       <>
         <PageHeader
           title="Registrar"
-          description="Registro diario por grupo. El puntaje semanal se calcula con el promedio de los registros y se publica los viernes a las 12:00."
+          description="Registro diario por grupo. El puntaje semanal se calcula con el promedio de los registros y se publica los lunes en la mañana."
         />
         <Tabs defaultValue="profesores">
           <TabsList className="mb-4">
@@ -131,7 +144,7 @@ export default async function EvaluarPage() {
           <TabsContent value="profesores">
             <ClassEvaluationBoard
               registrarName={profile.full_name}
-              courses={courses ?? []}
+              courses={courses}
               areas={profAreas}
               subjectMode="required"
             />
@@ -139,7 +152,7 @@ export default async function EvaluarPage() {
           <TabsContent value="convivencia">
             <ClassEvaluationBoard
               registrarName={profile.full_name}
-              courses={courses ?? []}
+              courses={courses}
               areas={convAreas}
               subjectMode="hidden"
             />
@@ -157,8 +170,8 @@ export default async function EvaluarPage() {
         title="Registrar"
         description={
           myGroup === "profesores"
-            ? "Registra la pauta de cada clase de tu asignatura. El puntaje semanal del curso será el promedio de todas las clases y se publica el viernes a las 12:00."
-            : "Registra las observaciones del día (a cualquier hora). El conteo semanal se publica el viernes a las 12:00."
+            ? "Registra la pauta de cada clase de tu asignatura. El puntaje semanal del curso será el promedio de todas las clases y se publica el lunes en la mañana."
+            : "Registra las observaciones del día (a cualquier hora). El conteo semanal se publica el lunes en la mañana."
         }
       />
       {areas.length === 0 ? (
@@ -173,7 +186,7 @@ export default async function EvaluarPage() {
       ) : (
         <ClassEvaluationBoard
           registrarName={profile.full_name}
-          courses={courses ?? []}
+          courses={courses}
           areas={areas}
           subjectMode={myGroup === "profesores" ? "required" : "hidden"}
         />

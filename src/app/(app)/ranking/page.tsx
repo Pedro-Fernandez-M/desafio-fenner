@@ -84,7 +84,7 @@ export default async function RankingPage() {
       <>
         <PageHeader
           title="Ranking"
-          description={`Puntaje acumulado de todo el ${semester.name} — el curso con más puntos al cierre gana el gran premio. Se publica los viernes a las 12:00.`}
+          description={`Puntaje acumulado de todo el ${semester.name} — el curso con más puntos al cierre gana el gran premio. Se publica los lunes en la mañana.`}
         />
         {snapshot ? (
           <PublishedRanking
@@ -97,7 +97,7 @@ export default async function RankingPage() {
             <AlertCircle className="size-4" />
             <AlertTitle>Aún sin publicación</AlertTitle>
             <AlertDescription>
-              El primer ranking se publicará el viernes a las 12:00.
+              El primer ranking se publicará el lunes en la mañana.
             </AlertDescription>
           </Alert>
         )}
@@ -122,7 +122,7 @@ export default async function RankingPage() {
     <>
       <PageHeader
         title="Ranking"
-        description={`${semester.name} · La publicación automática es los viernes a las 12:00 (hora de Chile).`}
+        description={`${semester.name} · La publicación automática es los lunes a las 08:00 (hora de Chile).`}
         action={<PublishButton />}
       />
       <Tabs defaultValue="vivo">
@@ -153,7 +153,7 @@ export default async function RankingPage() {
               <AlertCircle className="size-4" />
               <AlertTitle>Aún sin publicación</AlertTitle>
               <AlertDescription>
-                Usa &quot;Publicar ahora&quot; o espera al viernes 12:00.
+                Usa &quot;Publicar ahora&quot; o espera al lunes.
               </AlertDescription>
             </Alert>
           )}

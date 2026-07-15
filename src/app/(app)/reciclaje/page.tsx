@@ -69,7 +69,7 @@ export default async function ReciclajePage() {
     <>
       <PageHeader
         title="Reciclaje"
-        description="Bonus semanal: 30 puntos por kilo de material reciclable (cartón, papel, aluminio, PET, potes Colun). Entrega los viernes."
+        description="Bonus semanal: 30 puntos por kilo de material reciclable (cartón, papel, aluminio, PET, envases de yogurt). Entrega los viernes."
       />
       <RecyclingManager courses={courses ?? []} records={records} />
     </>

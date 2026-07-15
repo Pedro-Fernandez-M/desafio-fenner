@@ -18,12 +18,15 @@ export const ROLE_LABELS: Record<Role, string> = {
   direccion: "Dirección",
 }
 
-/** Niveles de logro y su equivalencia en puntos/XP. */
+/**
+ * Niveles de logro. Cada nivel entrega XP (canjeable) y el DOBLE en
+ * Puntaje General (ranking): 1 = 10/20 · 2 = 20/40 · 3 = 30/60.
+ */
 export const LEVELS = [
-  { level: 0, label: "Insuficiente", points: 0, color: "text-red-600" },
-  { level: 1, label: "Suficiente", points: 10, color: "text-amber-600" },
-  { level: 2, label: "Bueno", points: 20, color: "text-blue-600" },
-  { level: 3, label: "Excelente", points: 30, color: "text-emerald-600" },
+  { level: 0, label: "Insuficiente", xp: 0, general: 0, color: "text-red-600" },
+  { level: 1, label: "Suficiente", xp: 10, general: 20, color: "text-amber-600" },
+  { level: 2, label: "Bueno", xp: 20, general: 40, color: "text-blue-600" },
+  { level: 3, label: "Excelente", xp: 30, general: 60, color: "text-emerald-600" },
 ] as const
 
 export function pointsForLevel(level: number): number {
@@ -68,15 +71,20 @@ export type NavKey =
   | "reciclaje"
   | "admin"
 
+/**
+ * Acceso por rol. Los PROFESORES solo registran sus clases: no ven ranking,
+ * historial, faltas ni canjes (el ranking público vive en /puntajes y
+ * /en-vivo). Convivencia tampoco ve el ranking interno. Admin ve todo.
+ */
 export const NAV_ACCESS: Record<NavKey, Role[]> = {
   dashboard: [...ROLES],
-  ranking: [...ROLES],
-  historial: [...ROLES],
+  ranking: ["administrador", "direccion"],
+  historial: ["administrador", "convivencia", "inspectoria", "residencia", "direccion"],
   evaluar: ["administrador", "profesor", "convivencia", "inspectoria", "residencia"],
-  canjes: ["administrador", "convivencia", "direccion", "profesor"],
+  canjes: ["administrador", "convivencia", "direccion"],
   bonos: ["administrador", "direccion"],
   penalizaciones: ["administrador", "inspectoria", "convivencia", "residencia", "direccion"],
-  reciclaje: ["administrador", "inspectoria", "convivencia", "profesor", "direccion"],
+  reciclaje: ["administrador", "inspectoria", "convivencia", "direccion"],
   admin: ["administrador"],
 }
 
@@ -122,5 +130,5 @@ export const MATERIAL_LABELS: Record<string, string> = {
   papel: "Papel",
   aluminio: "Aluminio",
   pet: "PET",
-  colun: "Colun (potes)",
+  colun: "Envases de yogurt",
 }

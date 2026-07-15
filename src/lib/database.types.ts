@@ -448,6 +448,21 @@ export interface Database {
         >
         Relationships: []
       }
+      teacher_courses: {
+        Row: {
+          teacher_id: string
+          course_id: string
+          created_at: string
+        }
+        Insert: {
+          teacher_id: string
+          course_id: string
+        }
+        Update: Partial<
+          Database["public"]["Tables"]["teacher_courses"]["Insert"]
+        >
+        Relationships: []
+      }
       ranking_snapshots: {
         Row: {
           id: string

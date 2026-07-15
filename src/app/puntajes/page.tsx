@@ -87,7 +87,7 @@ export default async function PuntajesPage() {
             <Trophy className="mx-auto mb-3 size-10 text-amber-400" />
             <p className="text-xl font-bold">¡El desafío está por comenzar!</p>
             <p className="mt-1 text-blue-200">
-              El primer marcador se publica el viernes a las 12:00.
+              El primer marcador se publica el lunes en la mañana.
             </p>
           </div>
         ) : (
@@ -159,7 +159,7 @@ export default async function PuntajesPage() {
                   month: "long",
                 })}
               </p>
-              <p>Se actualiza todos los viernes a las 12:00 · ¡Cada buena acción suma! 💪</p>
+              <p>Se actualiza todos los lunes · ¡Cada buena acción suma! 💪</p>
             </footer>
           </>
         )}
