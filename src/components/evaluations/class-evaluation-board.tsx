@@ -39,12 +39,18 @@ export function ClassEvaluationBoard({
   areas,
   subjectMode = "optional",
   registrarName,
+  subjectOptions,
+  jefaturaCourseId,
 }: {
   courses: Course[]
   areas: Area[]
   /** required: profesores (deben indicar asignatura) · hidden: convivencia */
   subjectMode?: "required" | "optional" | "hidden"
   registrarName?: string
+  /** Asignaturas del profesor → despliega un menú en vez de texto libre. */
+  subjectOptions?: string[]
+  /** Curso del que el profesor es jefe (habilita opción "Jefatura"). */
+  jefaturaCourseId?: string | null
 }) {
   const supabase = useMemo(() => createClient(), [])
   const queryClient = useQueryClient()
@@ -53,7 +59,8 @@ export function ClassEvaluationBoard({
   const [courseId, setCourseId] = useState(courses[0]?.id ?? "")
   const [classDate, setClassDate] = useState(todayISO())
   const [block, setBlock] = useState<string>("none")
-  const [subject, setSubject] = useState("")
+  const [subject, setSubject] = useState("") // texto libre / "Otra"
+  const [subjectSel, setSubjectSel] = useState("") // selección del menú
   const [levels, setLevels] = useState<Record<string, number>>({})
   const [note, setNote] = useState("")
 
@@ -64,6 +71,17 @@ export function ClassEvaluationBoard({
   ]
 
   const blockNum = block === "none" ? null : Number(block)
+
+  // Menú de asignatura (solo profesores con asignaturas definidas)
+  const useSubjectMenu = subjectMode !== "hidden" && subjectOptions !== undefined
+  const jefaturaHere = Boolean(jefaturaCourseId && courseId === jefaturaCourseId)
+  const subjectItems = [
+    ...(subjectOptions ?? []).map((s) => ({ value: s, label: s })),
+    ...(jefaturaHere ? [{ value: "Jefatura", label: "Jefatura" }] : []),
+    { value: "__otra__", label: "Otra…" },
+  ]
+  const effectiveSubject =
+    subjectSel === "__otra__" ? subject.trim() : subjectSel
 
   // Carga un registro existente del mismo profesor/curso/día/bloque (para corregir)
   const { data: existing, isFetching } = useQuery({
@@ -100,7 +118,25 @@ export function ClassEvaluationBoard({
     }
     setLevels(map)
     setNote(existing?.note ?? "")
-    setSubject(existing?.subject ?? "")
+
+    const prev = existing?.subject ?? ""
+    if (useSubjectMenu) {
+      const known =
+        (subjectOptions ?? []).includes(prev) || prev === "Jefatura"
+      if (prev && known) {
+        setSubjectSel(prev)
+        setSubject("")
+      } else if (prev) {
+        setSubjectSel("__otra__")
+        setSubject(prev)
+      } else {
+        setSubjectSel("")
+        setSubject("")
+      }
+    } else {
+      setSubject(prev)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existing])
 
   const totalIndicators = areas.reduce((n, a) => n + a.indicators.length, 0)
@@ -123,8 +159,12 @@ export function ClassEvaluationBoard({
       toast.error("Registra al menos un indicador.")
       return
     }
-    if (subjectMode === "required" && !subject.trim()) {
-      toast.error("Indica la asignatura de la clase.")
+    if (subjectMode === "required" && !effectiveSubject) {
+      toast.error(
+        useSubjectMenu
+          ? "Selecciona la asignatura (o elige “Otra”)."
+          : "Indica la asignatura de la clase."
+      )
       return
     }
     startTransition(async () => {
@@ -132,7 +172,7 @@ export function ClassEvaluationBoard({
         courseId,
         classDate,
         block: blockNum,
-        subject: subject || null,
+        subject: effectiveSubject || null,
         scores: Object.entries(levels).map(([indicator_id, level]) => ({
           indicator_id,
           level,
@@ -214,12 +254,41 @@ export function ClassEvaluationBoard({
               <Label htmlFor="subject">
                 Asignatura{subjectMode === "optional" ? " (opcional)" : ""}
               </Label>
-              <Input
-                id="subject"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder="Ej: Matemáticas"
-              />
+              {useSubjectMenu ? (
+                <>
+                  <Select
+                    items={subjectItems}
+                    value={subjectSel}
+                    onValueChange={(v) => v && setSubjectSel(v)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Selecciona…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subjectItems.map((s) => (
+                        <SelectItem key={s.value} value={s.value}>
+                          {s.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {subjectSel === "__otra__" && (
+                    <Input
+                      className="mt-2"
+                      value={subject}
+                      onChange={(e) => setSubject(e.target.value)}
+                      placeholder="Escribe la asignatura"
+                    />
+                  )}
+                </>
+              ) : (
+                <Input
+                  id="subject"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="Ej: Matemáticas"
+                />
+              )}
             </div>
           )}
         </CardContent>

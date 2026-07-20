@@ -87,13 +87,22 @@ export default async function EvaluarPage() {
 
   // Los profesores solo ven (y el RPC solo acepta) sus cursos asignados.
   let courses = allCourses ?? []
+  let jefaturaCourseId: string | null = null
   if (profile.role === "profesor") {
-    const { data: assigned } = await supabase
-      .from("teacher_courses")
-      .select("course_id")
-      .eq("teacher_id", profile.id)
+    const [{ data: assigned }, { data: headed }] = await Promise.all([
+      supabase
+        .from("teacher_courses")
+        .select("course_id")
+        .eq("teacher_id", profile.id),
+      supabase
+        .from("courses")
+        .select("id")
+        .eq("head_teacher_id", profile.id)
+        .maybeSingle(),
+    ])
     const allowed = new Set((assigned ?? []).map((a) => a.course_id))
     courses = courses.filter((c) => allowed.has(c.id))
+    jefaturaCourseId = headed?.id ?? null
   }
 
   const allAreas = (areasRaw ?? []) as unknown as AreaRow[]
@@ -189,6 +198,10 @@ export default async function EvaluarPage() {
           courses={courses}
           areas={areas}
           subjectMode={myGroup === "profesores" ? "required" : "hidden"}
+          subjectOptions={
+            profile.role === "profesor" ? profile.subjects ?? [] : undefined
+          }
+          jefaturaCourseId={jefaturaCourseId}
         />
       )}
     </>
