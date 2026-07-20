@@ -1,6 +1,7 @@
 import { Trophy, CalendarClock } from "lucide-react"
 
 import { createAdminClient } from "@/lib/supabase/server"
+import { Podium } from "@/components/scoreboard/podium"
 
 export const metadata = {
   title: "¿Cómo vamos? · Desafío Fenner",
@@ -16,13 +17,6 @@ type Row = {
   general_total: number
   position: number
   courses: { name: string } | null
-}
-
-const MEDAL: Record<number, string> = { 1: "🥇", 2: "🥈", 3: "🥉" }
-const PODIUM_STYLES: Record<number, string> = {
-  1: "border-amber-400/60 bg-gradient-to-b from-amber-400/20 to-transparent",
-  2: "border-slate-300/40 bg-gradient-to-b from-slate-300/15 to-transparent",
-  3: "border-orange-400/40 bg-gradient-to-b from-orange-400/15 to-transparent",
 }
 
 async function getPublishedRanking() {
@@ -92,26 +86,12 @@ export default async function PuntajesPage() {
           </div>
         ) : (
           <>
-            {/* Podio */}
-            <div className="mb-8 grid gap-4 sm:grid-cols-3">
-              {podium.map((r) => (
-                <div
-                  key={r.id}
-                  className={`rounded-2xl border p-6 text-center backdrop-blur-sm ${
-                    PODIUM_STYLES[r.position] ?? "border-white/15"
-                  } ${r.position === 1 ? "sm:order-2 sm:-mt-3 sm:scale-105" : r.position === 2 ? "sm:order-1" : "sm:order-3"}`}
-                >
-                  <div className="text-5xl">{MEDAL[r.position]}</div>
-                  <p className="mt-3 text-2xl font-black">{r.name}</p>
-                  <p className="mt-1 text-3xl font-black text-amber-300">
-                    {r.points.toLocaleString("es-CL")}
-                    <span className="ml-1 text-base font-semibold text-blue-200">
-                      pts
-                    </span>
-                  </p>
-                </div>
-              ))}
-            </div>
+            {/* Podio visual */}
+            {podium.length > 0 && (
+              <div className="mb-10">
+                <Podium top3={podium} />
+              </div>
+            )}
 
             {/* Resto de los cursos */}
             {rest.length > 0 && (
