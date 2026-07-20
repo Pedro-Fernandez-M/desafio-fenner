@@ -7,7 +7,7 @@ import type { Role, IndicatorGroup } from "@/lib/constants"
 
 type Result = { ok: true } | { ok: false; error: string }
 
-async function requireAdmin(): Promise<Result | null> {
+async function requireAdmin(): Promise<{ ok: false; error: string } | null> {
   const profile = await requireProfile()
   if (profile.role !== "administrador") {
     return { ok: false, error: "Solo el administrador puede hacer esto." }
@@ -38,6 +38,21 @@ export async function publishRanking(): Promise<Result> {
 
   revalidatePath("/ranking")
   return { ok: true }
+}
+
+/** Consolida el promedio de clases de profesores (se automatiza los viernes). */
+export async function consolidateClasses(): Promise<
+  { ok: true; count: number } | { ok: false; error: string }
+> {
+  const guard = await requireAdmin()
+  if (guard) return guard
+
+  const supabase = await createClient()
+  const { data, error } = await supabase.rpc("consolidate_class_scores")
+  if (error) return { ok: false, error: error.message }
+
+  revalidatePath("/ranking")
+  return { ok: true, count: (data as number) ?? 0 }
 }
 
 // ---------------------------------------------------------------------------

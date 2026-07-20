@@ -603,6 +603,10 @@ export interface Database {
         Args: Record<string, never>
         Returns: string
       }
+      consolidate_class_scores: {
+        Args: Record<string, never>
+        Returns: number
+      }
       try_scheduled_publish: {
         Args: Record<string, never>
         Returns: undefined
