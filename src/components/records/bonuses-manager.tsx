@@ -25,6 +25,7 @@ const BONUS_KINDS = [
   { key: "matematicas", label: "Promedio ≥ 5.5 en Matemáticas", points: 300 },
   { key: "ambas", label: "Promedio ≥ 6.0 en ambas", points: 700 },
   { key: "mejora_promedio", label: "Mejora su promedio", points: 200 },
+  { key: "lectura_domiciliaria", label: "Lectura domiciliaria", points: 0 },
   { key: "otro", label: "Otro (puntos personalizados)", points: 0 },
 ] as const
 
@@ -59,7 +60,8 @@ export function BonusesManager({
   const [description, setDescription] = useState("")
 
   const kindDef = BONUS_KINDS.find((k) => k.key === kind)
-  const isCustom = kind === "otro"
+  // Los tipos sin puntaje fijo (0) piden un valor manual.
+  const isCustom = (kindDef?.points ?? 0) === 0
   const points = isCustom ? Number(customPoints) : kindDef?.points ?? 0
 
   const courseItems = courses.map((c) => ({ value: c.id, label: c.name }))
