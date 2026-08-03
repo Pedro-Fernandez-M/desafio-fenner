@@ -939,7 +939,7 @@ insert into public.areas (slug, name, description, order_index) values
   ('academica',  'Responsabilidad Académica', 'Asistencia, puntualidad, trabajo y entregas.', 1),
   ('convivencia','Convivencia y Respeto',     'Incidencias, participación e inicio de clases.', 2),
   ('espacios',   'Cuidado de Espacios',       'Limpieza, orden, energía y mobiliario.', 3),
-  ('tecnologia', 'Autonomía y Uso Responsable de Tecnología', 'Materiales, EPP y normas de taller.', 4),
+  ('tecnologia', 'Autonomía', 'Materiales, EPP, normas de taller y uso del uniforme.', 4),
   ('pertenencia','Sentido de Pertenencia',    'Uso correcto del uniforme.', 5),
   ('residencia', 'Convivencia en la Residencia', 'Conflictos, horarios y asistencia del internado.', 6)
 on conflict (slug) do nothing;
@@ -2229,7 +2229,6 @@ begin
   return v_eval_id;
 end;
 $$;
-
 -- =============================================================================
 -- Desafío Fenner · 0012 · Asignaturas por profesor
 -- =============================================================================
@@ -2241,7 +2240,6 @@ $$;
 
 alter table public.profiles
   add column if not exists subjects text[] not null default '{}';
-
 -- =============================================================================
 -- Desafío Fenner · 0013 · Consolidación de clases los viernes
 -- =============================================================================
@@ -2475,7 +2473,6 @@ begin
 exception when others then
   raise notice 'pg_cron no disponible (%): consolida manualmente desde el panel.', sqlerrm;
 end $$;
-
 -- =============================================================================
 -- Desafío Fenner · 0014 · Rúbrica actualizada (documento "DESAFÍO FENNER 2026")
 -- =============================================================================
@@ -2548,7 +2545,7 @@ begin
    '3 o más daños nuevos', '2 daños nuevos', '1 daño nuevo', 'Ningún daño nuevo',
    '{profesor}', 'clase', 'profesores', 2),
 
-  -- Autonomía y Uso Responsable de Tecnología
+  -- Autonomía (materiales, EPP, normas de taller y uniforme)
   (a_tec, 'Materiales y EPP',
    'Menos del 85% asiste con materiales y/o EPP', '85%–89%', '90%–94%', '95% o más',
    '{profesor}', 'clase', 'profesores', 1),

@@ -7,7 +7,7 @@ insert into public.areas (slug, name, description, order_index) values
   ('academica',  'Responsabilidad Académica', 'Asistencia, puntualidad, trabajo y entregas.', 1),
   ('convivencia','Convivencia y Respeto',     'Incidencias, participación e inicio de clases.', 2),
   ('espacios',   'Cuidado de Espacios',       'Limpieza, orden, energía y mobiliario.', 3),
-  ('tecnologia', 'Autonomía y Uso Responsable de Tecnología', 'Materiales, EPP y normas de taller.', 4),
+  ('tecnologia', 'Autonomía', 'Materiales, EPP, normas de taller y uso del uniforme.', 4),
   ('pertenencia','Sentido de Pertenencia',    'Uso correcto del uniforme.', 5),
   ('residencia', 'Convivencia en la Residencia', 'Conflictos, horarios y asistencia del internado.', 6)
 on conflict (slug) do nothing;

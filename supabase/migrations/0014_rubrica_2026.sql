@@ -70,7 +70,7 @@ begin
    '3 o más daños nuevos', '2 daños nuevos', '1 daño nuevo', 'Ningún daño nuevo',
    '{profesor}', 'clase', 'profesores', 2),
 
-  -- Autonomía y Uso Responsable de Tecnología
+  -- Autonomía (materiales, EPP, normas de taller y uniforme)
   (a_tec, 'Materiales y EPP',
    'Menos del 85% asiste con materiales y/o EPP', '85%–89%', '90%–94%', '95% o más',
    '{profesor}', 'clase', 'profesores', 1),
