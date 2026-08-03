@@ -450,6 +450,27 @@ export interface Database {
         >
         Relationships: []
       }
+      class_schedule: {
+        Row: {
+          id: string
+          teacher_id: string
+          course_id: string
+          weekday: number
+          subject: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          teacher_id: string
+          course_id: string
+          weekday: number
+          subject: string
+        }
+        Update: Partial<
+          Database["public"]["Tables"]["class_schedule"]["Insert"]
+        >
+        Relationships: []
+      }
       teacher_courses: {
         Row: {
           teacher_id: string

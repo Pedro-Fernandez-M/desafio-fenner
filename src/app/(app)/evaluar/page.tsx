@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { groupForRole, GROUP_LABELS, type IndicatorGroup } from "@/lib/constants"
 import { PageHeader } from "@/components/layout/page-header"
 import { ClassEvaluationBoard } from "@/components/evaluations/class-evaluation-board"
+import { TeacherScheduleBoard } from "@/components/evaluations/teacher-schedule-board"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AlertCircle, GraduationCap, HeartHandshake } from "lucide-react"
@@ -171,36 +172,144 @@ export default async function EvaluarPage() {
     )
   }
 
-  const areas = myGroup === "profesores" ? profAreas : convAreas
+  // ---- Convivencia: registro libre por día ----
+  if (myGroup === "convivencia") {
+    return (
+      <>
+        <PageHeader
+          title="Registrar"
+          description="Registra las observaciones del día (a cualquier hora). El conteo semanal se refleja al instante."
+        />
+        {convAreas.length === 0 ? (
+          <Alert>
+            <AlertCircle className="size-4" />
+            <AlertTitle>Sin indicadores asignados</AlertTitle>
+            <AlertDescription>
+              El administrador aún no asigna indicadores a tu grupo.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <ClassEvaluationBoard
+            registrarName={profile.full_name}
+            courses={courses}
+            areas={convAreas}
+            subjectMode="hidden"
+          />
+        )}
+      </>
+    )
+  }
+
+  // ---- Profesor: registro por horario de la semana ----
+  const { data: schedRaw } = await supabase
+    .from("class_schedule")
+    .select("course_id, weekday, subject, courses(name)")
+    .eq("teacher_id", profile.id)
+    .order("weekday")
+
+  type SchedRow = {
+    course_id: string
+    weekday: number
+    subject: string
+    courses: { name: string } | null
+  }
+  const sched = (schedRaw ?? []) as unknown as SchedRow[]
+
+  // Fechas de la semana actual (lunes a viernes)
+  const iso = (d: Date) =>
+    new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+      .toISOString()
+      .slice(0, 10)
+  const today = new Date()
+  const monday = new Date(today)
+  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7))
+  const dateForWeekday: Record<number, string> = {}
+  for (let w = 1; w <= 5; w++) {
+    const d = new Date(monday)
+    d.setDate(monday.getDate() + (w - 1))
+    dateForWeekday[w] = iso(d)
+  }
+  const friday = new Date(monday)
+  friday.setDate(monday.getDate() + 4)
+  const fmt = (d: Date) =>
+    d.toLocaleDateString("es-CL", { day: "numeric", month: "long" })
+  const weekLabel = `Semana del ${fmt(monday)} al ${fmt(friday)}`
+
+  const slots = sched.map((s) => {
+    const date = dateForWeekday[s.weekday]
+    return {
+      key: `${s.course_id}|${date}|${s.subject}`,
+      courseId: s.course_id,
+      courseName: s.courses?.name ?? "—",
+      subject: s.subject,
+      date,
+      dayLabel: weekLabel,
+      weekday: s.weekday,
+    }
+  })
+
+  // Registros ya hechos esta semana
+  const { data: myEvalsRaw } = await supabase
+    .from("class_evaluations")
+    .select(
+      "course_id, class_date, subject, note, class_evaluation_scores(indicator_id, level)"
+    )
+    .eq("evaluator_id", profile.id)
+    .gte("class_date", dateForWeekday[1])
+    .lte("class_date", dateForWeekday[5])
+
+  type EvalRow = {
+    course_id: string
+    class_date: string
+    subject: string | null
+    note: string | null
+    class_evaluation_scores: { indicator_id: string; level: number }[]
+  }
+  const registered: Record<
+    string,
+    { levels: Record<string, number>; note: string }
+  > = {}
+  for (const e of (myEvalsRaw ?? []) as unknown as EvalRow[]) {
+    const levels: Record<string, number> = {}
+    for (const s of e.class_evaluation_scores) levels[s.indicator_id] = s.level
+    registered[`${e.course_id}|${e.class_date}|${e.subject ?? ""}`] = {
+      levels,
+      note: e.note ?? "",
+    }
+  }
+
+  // Fallback: profesor sin horario cargado → registro libre
+  const hasSchedule = slots.length > 0
 
   return (
     <>
       <PageHeader
         title="Registrar"
-        description={
-          myGroup === "profesores"
-            ? "Registra la pauta de cada clase de tu asignatura. El puntaje semanal del curso será el promedio de todas las clases y se publica el lunes en la mañana."
-            : "Registra las observaciones del día (a cualquier hora). El conteo semanal se publica el lunes en la mañana."
-        }
+        description="Registra cada clase de tu horario. Al final de la semana se promedian tus registros y se calcula el puntaje del curso."
       />
-      {areas.length === 0 ? (
+      {profAreas.length === 0 ? (
         <Alert>
           <AlertCircle className="size-4" />
           <AlertTitle>Sin indicadores asignados</AlertTitle>
           <AlertDescription>
-            El administrador aún no asigna indicadores a tu grupo (
-            {myGroup ? GROUP_LABELS[myGroup] : "—"}).
+            El administrador aún no asigna indicadores a tu grupo.
           </AlertDescription>
         </Alert>
+      ) : hasSchedule ? (
+        <TeacherScheduleBoard
+          slots={slots}
+          areas={profAreas}
+          registrarName={profile.full_name}
+          registered={registered}
+          weekLabel={weekLabel}
+        />
       ) : (
         <ClassEvaluationBoard
           registrarName={profile.full_name}
           courses={courses}
-          areas={areas}
-          subjectMode={myGroup === "profesores" ? "required" : "hidden"}
-          subjectOptions={
-            profile.role === "profesor" ? profile.subjects ?? [] : undefined
-          }
+          areas={profAreas}
+          subjectMode="required"
+          subjectOptions={profile.subjects ?? []}
           jefaturaCourseId={jefaturaCourseId}
         />
       )}
