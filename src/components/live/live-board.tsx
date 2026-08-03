@@ -100,12 +100,17 @@ export function LiveBoard() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-3">
                   <p className="truncate text-xl font-black">{r.courseName}</p>
-                  <p className="shrink-0 text-xl font-black text-amber-300">
-                    {r.general.toLocaleString("es-CL")}
-                    <span className="ml-1 text-sm font-semibold text-blue-200">
-                      pts
-                    </span>
-                  </p>
+                  <div className="shrink-0 text-right">
+                    <p className="text-xl font-black text-amber-300">
+                      {r.general.toLocaleString("es-CL")}
+                      <span className="ml-1 text-sm font-semibold text-blue-200">
+                        pts
+                      </span>
+                    </p>
+                    <p className="text-xs font-semibold text-emerald-300">
+                      ⚡ {r.xpAvailable.toLocaleString("es-CL")} XP para gastar
+                    </p>
+                  </div>
                 </div>
                 <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-white/10">
                   <div

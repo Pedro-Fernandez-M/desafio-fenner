@@ -6,6 +6,8 @@ export type PodiumEntry = {
   id: string
   name: string
   points: number
+  xp: number
+  xpEarned: number
   position: number
 }
 
@@ -68,6 +70,12 @@ function Pedestal({ entry, delay }: { entry: PodiumEntry; delay: number }) {
         <p className="text-lg font-black text-amber-300 sm:text-2xl">
           {entry.points.toLocaleString("es-CL")}
           <span className="ml-0.5 text-xs font-semibold text-blue-200">pts</span>
+        </p>
+        <p className="text-xs font-semibold text-emerald-300">
+          ⚡ {entry.xp.toLocaleString("es-CL")} XP para gastar
+        </p>
+        <p className="text-[11px] text-blue-200">
+          {entry.xpEarned.toLocaleString("es-CL")} XP acumulados
         </p>
       </div>
 

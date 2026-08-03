@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { Trophy, Radio, CalendarClock } from "lucide-react"
+import { Trophy, CalendarClock } from "lucide-react"
 
 import { createClient } from "@/lib/supabase/client"
 import { mergeRanking, type CourseLite, type Standing } from "@/lib/ranking"
@@ -41,6 +41,8 @@ export function ScoreboardLive() {
         id: r.courseId,
         name: r.courseName,
         points: r.general,
+        xp: r.xpAvailable,
+        xpEarned: r.xpEarned,
         position: r.position,
       }))
       return { ranking }
@@ -86,11 +88,6 @@ export function ScoreboardLive() {
 
   return (
     <>
-      <div className="mb-6 flex items-center justify-center gap-2 text-sm text-emerald-300">
-        <Radio className="size-4 animate-pulse" />
-        En vivo · se actualiza solo
-      </div>
-
       {podium.length > 0 && (
         <div className="mb-10">
           <Podium top3={podium} />
@@ -110,10 +107,20 @@ export function ScoreboardLive() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-3">
                   <p className="truncate text-lg font-bold">{r.name}</p>
-                  <p className="shrink-0 text-lg font-black text-amber-300">
-                    {r.points.toLocaleString("es-CL")}{" "}
-                    <span className="text-sm font-semibold text-blue-200">pts</span>
-                  </p>
+                  <div className="shrink-0 text-right">
+                    <p className="text-lg font-black text-amber-300">
+                      {r.points.toLocaleString("es-CL")}{" "}
+                      <span className="text-sm font-semibold text-blue-200">
+                        pts
+                      </span>
+                    </p>
+                    <p className="text-xs font-semibold text-emerald-300">
+                      ⚡ {r.xp.toLocaleString("es-CL")} XP para gastar
+                    </p>
+                    <p className="text-[11px] text-blue-200/80">
+                      {r.xpEarned.toLocaleString("es-CL")} XP acumulados
+                    </p>
+                  </div>
                 </div>
                 <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-white/10">
                   <div
