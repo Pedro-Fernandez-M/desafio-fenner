@@ -117,9 +117,6 @@ export function ScoreboardLive() {
                     <p className="text-xs font-semibold text-emerald-300">
                       ⚡ {r.xp.toLocaleString("es-CL")} XP para gastar
                     </p>
-                    <p className="text-[11px] text-blue-200/80">
-                      {r.xpEarned.toLocaleString("es-CL")} XP acumulados
-                    </p>
                   </div>
                 </div>
                 <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-white/10">

@@ -74,9 +74,6 @@ function Pedestal({ entry, delay }: { entry: PodiumEntry; delay: number }) {
         <p className="text-xs font-semibold text-emerald-300">
           ⚡ {entry.xp.toLocaleString("es-CL")} XP para gastar
         </p>
-        <p className="text-[11px] text-blue-200">
-          {entry.xpEarned.toLocaleString("es-CL")} XP acumulados
-        </p>
       </div>
 
       {/* Pedestal */}
