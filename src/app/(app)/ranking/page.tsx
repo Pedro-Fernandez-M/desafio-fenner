@@ -28,7 +28,7 @@ async function getLatestSnapshot(semesterId: string) {
   const { data: rowsRaw } = await supabase
     .from("ranking_snapshot_rows")
     .select(
-      "course_id, general_total, xp_available, position, courses(name, photo_url)"
+      "course_id, general_total, xp_earned, xp_available, position, courses(name, photo_url)"
     )
     .eq("snapshot_id", snapshot.id)
     .order("position")
@@ -36,6 +36,7 @@ async function getLatestSnapshot(semesterId: string) {
   type RowRaw = {
     course_id: string
     general_total: number
+    xp_earned: number
     xp_available: number
     position: number
     courses: { name: string; photo_url: string | null } | null
@@ -47,6 +48,7 @@ async function getLatestSnapshot(semesterId: string) {
       course_name: r.courses?.name ?? "—",
       course_photo: r.courses?.photo_url ?? null,
       general_total: r.general_total,
+      xp_earned: r.xp_earned,
       xp_available: r.xp_available,
       position: r.position,
     })

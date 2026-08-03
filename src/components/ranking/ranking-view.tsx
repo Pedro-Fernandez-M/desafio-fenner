@@ -111,9 +111,14 @@ export function RankingView({
                   pts
                 </span>
               </p>
-              <p className="text-muted-foreground mt-1 flex items-center gap-1 text-sm">
-                <Zap className="size-3.5 text-amber-500" />
-                {row.xpAvailable.toLocaleString("es-CL")} XP disponibles
+              <p className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
+                <span className="inline-flex items-center gap-1">
+                  <Zap className="size-3.5 text-amber-500" />
+                  {row.xpAvailable.toLocaleString("es-CL")} para gastar
+                </span>
+                <span className="text-xs">
+                  · {row.xpEarned.toLocaleString("es-CL")} acumulado
+                </span>
               </p>
             </Link>
           ))}
@@ -130,7 +135,8 @@ export function RankingView({
               <TableHead className="text-right">
                 Puntaje General (acumulado)
               </TableHead>
-              <TableHead className="text-right">XP disponibles</TableHead>
+              <TableHead className="text-right">XP acumulado</TableHead>
+              <TableHead className="text-right">XP para gastar</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -159,6 +165,9 @@ export function RankingView({
                   {row.general.toLocaleString("es-CL")}
                 </TableCell>
                 <TableCell className="text-muted-foreground text-right">
+                  {row.xpEarned.toLocaleString("es-CL")}
+                </TableCell>
+                <TableCell className="text-right font-medium text-amber-600">
                   <span className="inline-flex items-center gap-1">
                     <Zap className="size-3.5 text-amber-500" />
                     {row.xpAvailable.toLocaleString("es-CL")}

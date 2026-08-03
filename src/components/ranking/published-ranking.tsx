@@ -17,6 +17,7 @@ export type PublishedRow = {
   course_name: string
   course_photo: string | null
   general_total: number
+  xp_earned: number
   xp_available: number
   position: number
 }
@@ -57,7 +58,8 @@ export function PublishedRanking({
               <TableHead className="text-right">
                 Puntaje General (acumulado)
               </TableHead>
-              <TableHead className="text-right">XP disponibles</TableHead>
+              <TableHead className="text-right">XP acumulado</TableHead>
+              <TableHead className="text-right">XP para gastar</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -86,6 +88,9 @@ export function PublishedRanking({
                   {row.general_total.toLocaleString("es-CL")}
                 </TableCell>
                 <TableCell className="text-muted-foreground text-right">
+                  {row.xp_earned.toLocaleString("es-CL")}
+                </TableCell>
+                <TableCell className="text-right font-medium text-amber-600">
                   <span className="inline-flex items-center gap-1">
                     <Zap className="size-3.5 text-amber-500" />
                     {row.xp_available.toLocaleString("es-CL")}
