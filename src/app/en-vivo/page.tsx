@@ -22,7 +22,14 @@ export default function EnVivoPage() {
           </p>
         </header>
         <LiveBoard />
-        <footer className="mt-10 text-center text-sm text-emerald-300/70">
+        <div className="mx-auto mt-8 flex max-w-2xl items-start justify-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-center text-sm text-amber-100">
+          <span>
+            Los puntajes de los profesores son un <b>promedio de la semana</b> y
+            se ajustan <b>hasta el viernes</b>, así que pueden variar. Las
+            anotaciones de Convivencia y los descuentos se reflejan al instante.
+          </span>
+        </div>
+        <footer className="mt-6 text-center text-sm text-emerald-300/70">
           Puntaje General acumulado del semestre · el ranking oficial se publica
           los lunes
         </footer>
