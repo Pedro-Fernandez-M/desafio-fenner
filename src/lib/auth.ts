@@ -50,7 +50,7 @@ export async function requireProfile(): Promise<Profile> {
  */
 export async function requireAccess(key: NavKey): Promise<Profile> {
   const profile = await requireProfile()
-  if (!canAccess(key, profile.role)) redirect("/")
+  if (!canAccess(key, profile.role, profile.allowed_modules)) redirect("/")
   return profile
 }
 

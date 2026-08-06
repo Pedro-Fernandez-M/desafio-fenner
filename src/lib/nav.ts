@@ -90,3 +90,17 @@ export const NAV_ITEMS: NavItem[] = [
 export function navItemsForRole(role: Role): NavItem[] {
   return NAV_ITEMS.filter((item) => NAV_ACCESS[item.key].includes(role))
 }
+
+/**
+ * Items visibles considerando `allowedModules` del perfil (si está definido,
+ * manda sobre el rol).
+ */
+export function navItemsFor(
+  role: Role,
+  allowedModules?: string[] | null
+): NavItem[] {
+  if (allowedModules && allowedModules.length > 0) {
+    return NAV_ITEMS.filter((item) => allowedModules.includes(item.key))
+  }
+  return navItemsForRole(role)
+}

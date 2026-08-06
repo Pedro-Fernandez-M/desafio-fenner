@@ -42,6 +42,7 @@ export interface Database {
           photo_url: string | null
           active: boolean
           subjects: string[]
+          allowed_modules: string[] | null
           created_at: string
           updated_at: string
         }
@@ -53,6 +54,7 @@ export interface Database {
           photo_url?: string | null
           active?: boolean
           subjects?: string[]
+          allowed_modules?: string[] | null
         }
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>
         Relationships: []
@@ -447,6 +449,14 @@ export interface Database {
         }
         Update: Partial<
           Database["public"]["Tables"]["class_week_totals"]["Insert"]
+        >
+        Relationships: []
+      }
+      user_indicators: {
+        Row: { user_id: string; indicator_id: string }
+        Insert: { user_id: string; indicator_id: string }
+        Update: Partial<
+          Database["public"]["Tables"]["user_indicators"]["Insert"]
         >
         Relationships: []
       }

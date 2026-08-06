@@ -88,8 +88,19 @@ export const NAV_ACCESS: Record<NavKey, Role[]> = {
   admin: ["administrador"],
 }
 
-export function canAccess(key: NavKey, role: Role | null | undefined): boolean {
+/**
+ * Acceso a un módulo. Si el perfil tiene `allowedModules` definido, esa lista
+ * manda (puede ampliar o restringir respecto del rol). Si no, se usa el rol.
+ */
+export function canAccess(
+  key: NavKey,
+  role: Role | null | undefined,
+  allowedModules?: string[] | null
+): boolean {
   if (!role) return false
+  if (allowedModules && allowedModules.length > 0) {
+    return allowedModules.includes(key)
+  }
   return NAV_ACCESS[key].includes(role)
 }
 

@@ -13,6 +13,7 @@ export default async function AppLayout({
       fullName={profile.full_name}
       role={profile.role}
       photoUrl={profile.photo_url}
+      allowedModules={profile.allowed_modules}
     >
       {children}
     </AppShell>

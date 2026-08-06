@@ -3,14 +3,14 @@ import { ArrowRight } from "lucide-react"
 
 import { requireProfile, getActiveSemester } from "@/lib/auth"
 import { ROLE_LABELS } from "@/lib/constants"
-import { navItemsForRole } from "@/lib/nav"
+import { navItemsFor } from "@/lib/nav"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 
 export default async function DashboardPage() {
   const profile = await requireProfile()
   const semester = await getActiveSemester()
-  const modules = navItemsForRole(profile.role).filter(
+  const modules = navItemsFor(profile.role, profile.allowed_modules).filter(
     (m) => m.key !== "dashboard"
   )
 

@@ -4,18 +4,20 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 
 import { cn } from "@/lib/utils"
-import { navItemsForRole } from "@/lib/nav"
+import { navItemsFor } from "@/lib/nav"
 import type { Role } from "@/lib/constants"
 
 export function SidebarNav({
   role,
+  allowedModules,
   onNavigate,
 }: {
   role: Role
+  allowedModules?: string[] | null
   onNavigate?: () => void
 }) {
   const pathname = usePathname()
-  const items = navItemsForRole(role)
+  const items = navItemsFor(role, allowedModules)
 
   return (
     <nav className="flex flex-col gap-1">

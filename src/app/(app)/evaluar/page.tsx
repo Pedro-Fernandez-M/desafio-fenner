@@ -110,8 +110,27 @@ export default async function EvaluarPage() {
   const isAdmin = profile.role === "administrador"
   const myGroup = groupForRole(profile.role)
 
-  const profAreas = areasForGroup(allAreas, "profesores")
-  const convAreas = areasForGroup(allAreas, "convivencia")
+  let profAreas = areasForGroup(allAreas, "profesores")
+  let convAreas = areasForGroup(allAreas, "convivencia")
+
+  // Restricción por indicador: si el usuario tiene indicadores asignados,
+  // solo puede registrar (y ver) esos.
+  const { data: uInd } = await supabase
+    .from("user_indicators")
+    .select("indicator_id")
+    .eq("user_id", profile.id)
+  const allowedInd = new Set((uInd ?? []).map((r) => r.indicator_id))
+  if (allowedInd.size > 0) {
+    const onlyAllowed = (areas: typeof convAreas) =>
+      areas
+        .map((a) => ({
+          ...a,
+          indicators: a.indicators.filter((i) => allowedInd.has(i.id)),
+        }))
+        .filter((a) => a.indicators.length > 0)
+    profAreas = onlyAllowed(profAreas)
+    convAreas = onlyAllowed(convAreas)
+  }
 
   const noCourses = courses.length === 0
 

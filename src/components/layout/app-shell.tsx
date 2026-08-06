@@ -29,11 +29,13 @@ export function AppShell({
   fullName,
   role,
   photoUrl,
+  allowedModules,
   children,
 }: {
   fullName: string
   role: Role
   photoUrl: string | null
+  allowedModules?: string[] | null
   children: React.ReactNode
 }) {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -46,7 +48,7 @@ export function AppShell({
           <Brand />
         </div>
         <div className="mt-8 flex-1 overflow-y-auto">
-          <SidebarNav role={role} />
+          <SidebarNav role={role} allowedModules={allowedModules} />
         </div>
         <p className="text-muted-foreground px-2 text-[11px]">
           © {new Date().getFullYear()} Desafío Fenner
@@ -60,7 +62,7 @@ export function AppShell({
           <div className="px-4 py-5">
             <Brand />
             <div className="mt-8">
-              <SidebarNav role={role} onNavigate={() => setMobileOpen(false)} />
+              <SidebarNav role={role} allowedModules={allowedModules} onNavigate={() => setMobileOpen(false)} />
             </div>
           </div>
         </SheetContent>
