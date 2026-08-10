@@ -86,7 +86,7 @@ export default async function RankingPage() {
       <>
         <PageHeader
           title="Ranking"
-          description={`Puntaje acumulado de todo el ${semester.name} — el curso con más puntos al cierre gana el gran premio. Se publica los lunes en la mañana.`}
+          description={`Puntaje acumulado hasta el viernes pasado (${semester.name}). Las clases de profesores de esta semana se promedian y se suman el viernes.`}
         />
         {snapshot ? (
           <PublishedRanking
@@ -124,7 +124,7 @@ export default async function RankingPage() {
     <>
       <PageHeader
         title="Ranking"
-        description={`${semester.name} · La publicación automática es los lunes a las 08:00 (hora de Chile).`}
+        description={`${semester.name} · Las clases de profesores se promedian y suman los viernes (botón "Consolidar clases"). Convivencia y descuentos son inmediatos.`}
         action={<PublishButton />}
       />
       <Tabs defaultValue="vivo">
