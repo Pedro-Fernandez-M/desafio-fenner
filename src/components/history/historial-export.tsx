@@ -27,7 +27,22 @@ function iso(d: Date) {
     .slice(0, 10)
 }
 const esc = (v: string | number) =>
-  String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+  String(v ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+
+type DetailRow = {
+  id: string
+  class_date: string
+  block: number | null
+  subject: string | null
+  note: string | null
+  created_at: string
+  courses: { name: string } | null
+  evaluator: { full_name: string; role: string } | null
+  class_evaluation_scores: { count: number }[]
+}
 
 export function HistorialExport() {
   const [loading, setLoading] = useState(false)
@@ -37,59 +52,71 @@ export function HistorialExport() {
     try {
       const supabase = createClient()
 
-      const [{ data: profiles }, { data: evals }] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("id, full_name, email, role, active")
-          .in("role", REGISTER_ROLES)
-          .order("full_name"),
-        supabase
+      // Perfiles que deberían registrar
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name, email, role, active")
+        .in("role", REGISTER_ROLES)
+        .order("full_name")
+
+      // TODOS los registros (paginado para superar el tope de 1000)
+      const details: DetailRow[] = []
+      const PAGE = 1000
+      for (let from = 0; ; from += PAGE) {
+        const { data } = await supabase
           .from("class_evaluations")
-          .select("evaluator_id, class_date, created_at"),
-      ])
+          .select(
+            "id, class_date, block, subject, note, created_at, courses(name), evaluator:profiles!class_evaluations_evaluator_id_fkey(full_name, role), class_evaluation_scores(count)"
+          )
+          .order("created_at", { ascending: false })
+          .range(from, from + PAGE - 1)
+        const chunk = (data ?? []) as unknown as DetailRow[]
+        details.push(...chunk)
+        if (chunk.length < PAGE) break
+      }
 
       const monday = iso(mondayOf(new Date()))
       const friday = iso(
         new Date(mondayOf(new Date()).getTime() + 4 * 86400000)
       )
 
+      // Índice por evaluador (nombre → conteos)
       type Agg = { total: number; week: number; last: string | null }
       const agg = new Map<string, Agg>()
-      for (const e of evals ?? []) {
-        const a = agg.get(e.evaluator_id) ?? { total: 0, week: 0, last: null }
+      for (const d of details) {
+        const name = d.evaluator?.full_name ?? "—"
+        const a = agg.get(name) ?? { total: 0, week: 0, last: null }
         a.total++
-        if (e.class_date >= monday && e.class_date <= friday) a.week++
-        if (!a.last || e.created_at > a.last) a.last = e.created_at
-        agg.set(e.evaluator_id, a)
+        if (d.class_date >= monday && d.class_date <= friday) a.week++
+        if (!a.last || d.created_at > a.last) a.last = d.created_at
+        agg.set(name, a)
       }
 
-      const rows = (profiles ?? []).map((p) => {
-        const a = agg.get(p.id) ?? { total: 0, week: 0, last: null }
-        return {
-          nombre: p.full_name,
-          correo: p.email ?? "",
-          rol: ROLE_LABELS[p.role as Role] ?? p.role,
-          grupo: p.role === "profesor" ? "Profesores" : "Convivencia",
-          semana: a.week,
-          total: a.total,
-          ultimo: a.last
-            ? new Date(a.last).toLocaleString("es-CL", {
-                day: "2-digit",
-                month: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-            : "— sin registros —",
-          activo: p.active ? "Sí" : "No",
-        }
-      })
+      // ---- Hoja 1: Resumen ----
+      const resumen = (profiles ?? [])
+        .map((p) => {
+          const a = agg.get(p.full_name) ?? { total: 0, week: 0, last: null }
+          return {
+            nombre: p.full_name,
+            correo: p.email ?? "",
+            rol: ROLE_LABELS[p.role as Role] ?? p.role,
+            grupo: p.role === "profesor" ? "Profesores" : "Convivencia",
+            semana: a.week,
+            total: a.total,
+            ultimo: a.last
+              ? new Date(a.last).toLocaleString("es-CL", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "— sin registros —",
+            activo: p.active ? "Sí" : "No",
+          }
+        })
+        .sort((x, y) => x.total - y.total || x.nombre.localeCompare(y.nombre))
 
-      // Orden: primero quienes NO han registrado esta semana
-      rows.sort(
-        (x, y) => x.semana - y.semana || x.nombre.localeCompare(y.nombre)
-      )
-
-      const header = [
+      const resHead = [
         "Nombre",
         "Correo",
         "Rol",
@@ -99,29 +126,60 @@ export function HistorialExport() {
         "Último registro",
         "Activo",
       ]
-      const body = rows
+      const resBody = resumen
         .map(
           (r) => `<tr>
-            <td>${esc(r.nombre)}</td>
-            <td>${esc(r.correo)}</td>
-            <td>${esc(r.rol)}</td>
-            <td>${esc(r.grupo)}</td>
-            <td>${r.semana === 0 ? '<b style="color:#c0392b">0</b>' : r.semana}</td>
-            <td>${r.total}</td>
-            <td>${esc(r.ultimo)}</td>
-            <td>${r.activo}</td>
+            <td>${esc(r.nombre)}</td><td>${esc(r.correo)}</td>
+            <td>${esc(r.rol)}</td><td>${esc(r.grupo)}</td>
+            <td>${r.total === 0 ? '<b style="color:#c0392b">0</b>' : r.total}</td>
+            <td>${r.total}</td><td>${esc(r.ultimo)}</td><td>${r.activo}</td>
           </tr>`
         )
         .join("")
 
-      const table = `<table border="1"><thead><tr>${header
-        .map((h) => `<th style="background:#1e40af;color:#fff">${h}</th>`)
-        .join("")}</tr></thead><tbody>${body}</tbody></table>`
+      // ---- Hoja 2: Detalle (todos los registros) ----
+      const detHead = [
+        "Fecha clase",
+        "Fecha/hora registro",
+        "Nombre",
+        "Rol",
+        "Curso",
+        "Asignatura",
+        "Bloque",
+        "N° indicadores",
+        "Observación",
+      ]
+      const detBody = details
+        .map((d) => {
+          const n = d.class_evaluation_scores?.[0]?.count ?? 0
+          return `<tr>
+            <td>${esc(d.class_date)}</td>
+            <td>${esc(new Date(d.created_at).toLocaleString("es-CL"))}</td>
+            <td>${esc(d.evaluator?.full_name ?? "—")}</td>
+            <td>${esc(ROLE_LABELS[(d.evaluator?.role ?? "") as Role] ?? d.evaluator?.role ?? "")}</td>
+            <td>${esc(d.courses?.name ?? "—")}</td>
+            <td>${esc(d.subject ?? "")}</td>
+            <td>${d.block ?? ""}</td>
+            <td>${n}</td>
+            <td>${esc(d.note ?? "")}</td>
+          </tr>`
+        })
+        .join("")
 
-      const html = `﻿<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body>
-        <h3>Desafío Fenner — Registros por persona</h3>
-        <p>Generado: ${new Date().toLocaleString("es-CL")} · Semana: ${monday} al ${friday}</p>
-        ${table}</body></html>`
+      const th = (cols: string[]) =>
+        `<tr>${cols
+          .map((h) => `<th style="background:#1e40af;color:#fff">${h}</th>`)
+          .join("")}</tr>`
+
+      const html = `﻿<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8">
+        <xml><x:ExcelWorkbook><x:ExcelWorksheets>
+          <x:ExcelWorksheet><x:Name>Resumen</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet>
+          <x:ExcelWorksheet><x:Name>Detalle</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet>
+        </x:ExcelWorksheets></x:ExcelWorkbook></xml>
+        </head><body>
+        <table border="1"><thead>${th(resHead)}</thead><tbody>${resBody}</tbody></table>
+        <table border="1"><thead>${th(detHead)}</thead><tbody>${detBody}</tbody></table>
+        </body></html>`
 
       const blob = new Blob([html], {
         type: "application/vnd.ms-excel;charset=utf-8",
@@ -134,7 +192,7 @@ export function HistorialExport() {
       a.click()
       a.remove()
       URL.revokeObjectURL(url)
-      toast.success("Excel descargado.")
+      toast.success(`Excel descargado (${details.length} registros).`)
     } catch {
       toast.error("No se pudo generar el Excel.")
     } finally {
