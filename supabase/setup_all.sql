@@ -2567,7 +2567,6 @@ begin
    'Menos del 89,9%', '90%–94,9%', '95%–99,9%', '100% de asistencia',
    '{residencia}', 'semanal', 'convivencia', 3);
 end $$;
-
 -- =============================================================================
 -- Desafío Fenner · 0015 · Horario de clases (registro solo de clases reales)
 -- =============================================================================
@@ -2768,7 +2767,6 @@ begin
   return v_eval_id;
 end;
 $$;
-
 -- =============================================================================
 -- Desafío Fenner · 0016 · Corrige columnas/consolidación faltantes (0013)
 -- =============================================================================
@@ -2841,7 +2839,6 @@ begin
 exception when others then
   raise notice 'pg_cron no disponible (%): consolida manualmente desde el panel.', sqlerrm;
 end $$;
-
 -- =============================================================================
 -- Desafío Fenner · 0017 · Puntaje de profesores en vivo (ya no diferido)
 -- =============================================================================
@@ -3016,7 +3013,6 @@ begin
   return v_eval_id;
 end;
 $$;
-
 -- =============================================================================
 -- Desafío Fenner · 0018 · Permisos granulares (por indicador y por módulo)
 -- =============================================================================
@@ -3228,7 +3224,6 @@ begin
   return v_eval_id;
 end;
 $$;
-
 -- =============================================================================
 -- Desafío Fenner · 0019 · Profesores diferidos al viernes (revierte 0017)
 -- =============================================================================
@@ -3412,7 +3407,6 @@ begin
   return v_eval_id;
 end;
 $$;
-
 -- =============================================================================
 -- Desafío Fenner · 0020 · Anulación de registros por el administrador
 -- =============================================================================
@@ -3433,7 +3427,8 @@ declare
   v_week   int;
   v_tt     int;
   v_ct     int;
-  v_cwt    public.class_week_totals%rowtype;
+  v_conviv_posted int;
+  v_teacher_consolidated int;
 begin
   if not public.is_admin() then
     raise exception 'Solo el administrador puede eliminar registros';
@@ -3482,25 +3477,27 @@ begin
       group by i.assigned_group, ces.indicator_id
     ) x;
 
-    select * into v_cwt from public.class_week_totals
+    select conviv_posted, teacher_consolidated
+      into v_conviv_posted, v_teacher_consolidated
+      from public.class_week_totals
       where course_id = v_course and semester_id = v_sem and week_number = v_week;
-    if v_cwt.course_id is null then return; end if;
+    if not found then return; end if;
 
     -- Convivencia: ajusta al instante
-    if (v_ct - v_cwt.conviv_posted) <> 0 then
+    if (v_ct - v_conviv_posted) <> 0 then
       insert into public.score_events
         (course_id, semester_id, type, general_delta, xp_delta, description, created_by)
       values
-        (v_course, v_sem, 'evaluacion', (v_ct - v_cwt.conviv_posted) * 2,
-         (v_ct - v_cwt.conviv_posted), 'Ajuste convivencia (anulación)', auth.uid());
+        (v_course, v_sem, 'evaluacion', (v_ct - v_conviv_posted) * 2,
+         (v_ct - v_conviv_posted), 'Ajuste convivencia (anulación)', auth.uid());
     end if;
     -- Profesores: solo si la semana ya estaba consolidada
-    if v_cwt.teacher_consolidated <> 0 and (v_tt - v_cwt.teacher_consolidated) <> 0 then
+    if v_teacher_consolidated <> 0 and (v_tt - v_teacher_consolidated) <> 0 then
       insert into public.score_events
         (course_id, semester_id, type, general_delta, xp_delta, description, created_by)
       values
-        (v_course, v_sem, 'evaluacion', (v_tt - v_cwt.teacher_consolidated) * 2,
-         (v_tt - v_cwt.teacher_consolidated), 'Ajuste clases (anulación)', auth.uid());
+        (v_course, v_sem, 'evaluacion', (v_tt - v_teacher_consolidated) * 2,
+         (v_tt - v_teacher_consolidated), 'Ajuste clases (anulación)', auth.uid());
     end if;
 
     update public.class_week_totals set

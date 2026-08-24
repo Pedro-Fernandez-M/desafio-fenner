@@ -18,7 +18,8 @@ declare
   v_week   int;
   v_tt     int;
   v_ct     int;
-  v_cwt    public.class_week_totals%rowtype;
+  v_conviv_posted int;
+  v_teacher_consolidated int;
 begin
   if not public.is_admin() then
     raise exception 'Solo el administrador puede eliminar registros';
@@ -67,25 +68,27 @@ begin
       group by i.assigned_group, ces.indicator_id
     ) x;
 
-    select * into v_cwt from public.class_week_totals
+    select conviv_posted, teacher_consolidated
+      into v_conviv_posted, v_teacher_consolidated
+      from public.class_week_totals
       where course_id = v_course and semester_id = v_sem and week_number = v_week;
-    if v_cwt.course_id is null then return; end if;
+    if not found then return; end if;
 
     -- Convivencia: ajusta al instante
-    if (v_ct - v_cwt.conviv_posted) <> 0 then
+    if (v_ct - v_conviv_posted) <> 0 then
       insert into public.score_events
         (course_id, semester_id, type, general_delta, xp_delta, description, created_by)
       values
-        (v_course, v_sem, 'evaluacion', (v_ct - v_cwt.conviv_posted) * 2,
-         (v_ct - v_cwt.conviv_posted), 'Ajuste convivencia (anulación)', auth.uid());
+        (v_course, v_sem, 'evaluacion', (v_ct - v_conviv_posted) * 2,
+         (v_ct - v_conviv_posted), 'Ajuste convivencia (anulación)', auth.uid());
     end if;
     -- Profesores: solo si la semana ya estaba consolidada
-    if v_cwt.teacher_consolidated <> 0 and (v_tt - v_cwt.teacher_consolidated) <> 0 then
+    if v_teacher_consolidated <> 0 and (v_tt - v_teacher_consolidated) <> 0 then
       insert into public.score_events
         (course_id, semester_id, type, general_delta, xp_delta, description, created_by)
       values
-        (v_course, v_sem, 'evaluacion', (v_tt - v_cwt.teacher_consolidated) * 2,
-         (v_tt - v_cwt.teacher_consolidated), 'Ajuste clases (anulación)', auth.uid());
+        (v_course, v_sem, 'evaluacion', (v_tt - v_teacher_consolidated) * 2,
+         (v_tt - v_teacher_consolidated), 'Ajuste clases (anulación)', auth.uid());
     end if;
 
     update public.class_week_totals set
