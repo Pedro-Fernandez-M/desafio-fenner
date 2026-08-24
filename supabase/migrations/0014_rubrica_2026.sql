@@ -35,7 +35,7 @@ begin
    'Menos del 89,9%', '90%–94,9%', '95%–99,9%', '100% de asistencia',
    '{convivencia,inspectoria}', 'semanal', 'convivencia', 1),
   (a_aca, 'Puntualidad al ingresar a clases',
-   'Menos del 85% ingresa puntualmente', '85%–89%', '90%–94%', '95% o más',
+   'Más de 3 atrasados', '3 atrasados', '1–2 atrasados', 'Ningún atrasado',
    '{convivencia,inspectoria}', 'semanal', 'convivencia', 2),
   (a_aca, 'Trabajo en clases',
    'Menos del 85% trabaja en clases', '85%–89%', '90%–94%', '95% o más',
