@@ -6,16 +6,21 @@ import { HistorialExport } from "@/components/history/historial-export"
 export const metadata = { title: "Historial · Desafío Fenner" }
 
 export default async function HistorialPage() {
-  await requireAccess("historial")
+  const profile = await requireAccess("historial")
+  const isAdmin = profile.role === "administrador"
 
   return (
     <>
       <PageHeader
         title="Historial"
-        description="Todas las modificaciones quedan registradas con nombre, materia, curso y hora — transparencia total."
+        description={
+          isAdmin
+            ? "Todas las modificaciones con nombre, curso y hora. Como administrador puedes eliminar registros erróneos."
+            : "Todas las modificaciones quedan registradas con nombre, materia, curso y hora — transparencia total."
+        }
         action={<HistorialExport />}
       />
-      <HistoryFeed />
+      <HistoryFeed isAdmin={isAdmin} />
     </>
   )
 }

@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState, useTransition } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 import {
   Radio,
   ClipboardCheck,
@@ -11,13 +12,33 @@ import {
   Gift,
   Zap,
   Pencil,
+  Trash2,
+  Loader2,
 } from "lucide-react"
 
 import { createClient } from "@/lib/supabase/client"
 import { SCORE_EVENT_LABELS } from "@/lib/constants"
+import { undoRecord } from "@/lib/actions/admin"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+
+const DELETABLE_TABLES = [
+  "penalties",
+  "bonuses",
+  "recycling_records",
+  "redemptions",
+  "class_evaluations",
+]
 
 type FeedItem = {
   id: string
@@ -31,6 +52,8 @@ type FeedItem = {
   eventType?: string
   generalDelta?: number
   xpDelta?: number
+  refTable?: string | null
+  refId?: string | null
 }
 
 const EVENT_ICONS: Record<string, typeof MinusCircle> = {
@@ -42,9 +65,25 @@ const EVENT_ICONS: Record<string, typeof MinusCircle> = {
   evaluacion: ClipboardCheck,
 }
 
-export function HistoryFeed() {
+export function HistoryFeed({ isAdmin = false }: { isAdmin?: boolean }) {
   const supabase = useMemo(() => createClient(), [])
   const queryClient = useQueryClient()
+  const [pending, startTransition] = useTransition()
+  const [toDelete, setToDelete] = useState<FeedItem | null>(null)
+
+  function handleDelete() {
+    if (!toDelete?.refTable || !toDelete?.refId) return
+    startTransition(async () => {
+      const res = await undoRecord(toDelete.refTable!, toDelete.refId!)
+      if (res.ok) {
+        toast.success("Registro eliminado y puntaje corregido.")
+        setToDelete(null)
+        queryClient.invalidateQueries({ queryKey: ["activity-feed"] })
+      } else {
+        toast.error(res.error)
+      }
+    })
+  }
 
   const { data: items, isLoading } = useQuery<FeedItem[]>({
     queryKey: ["activity-feed"],
@@ -56,15 +95,15 @@ export function HistoryFeed() {
             "id, class_date, block, subject, note, created_at, updated_at, courses(name), evaluator:profiles!class_evaluations_evaluator_id_fkey(full_name), class_evaluation_scores(count)"
           )
           .order("updated_at", { ascending: false })
-          .limit(40),
+          .limit(60),
         supabase
           .from("score_events")
           .select(
-            "id, type, general_delta, xp_delta, description, created_at, courses(name), actor:profiles!score_events_created_by_fkey(full_name)"
+            "id, type, general_delta, xp_delta, description, created_at, reference_table, reference_id, courses(name), actor:profiles!score_events_created_by_fkey(full_name)"
           )
           .neq("type", "evaluacion")
           .order("created_at", { ascending: false })
-          .limit(40),
+          .limit(60),
       ])
 
       type RegRaw = {
@@ -86,6 +125,8 @@ export function HistoryFeed() {
         xp_delta: number
         description: string | null
         created_at: string
+        reference_table: string | null
+        reference_id: string | null
         courses: { name: string } | null
         actor: { full_name: string } | null
       }
@@ -103,6 +144,8 @@ export function HistoryFeed() {
             edited: r.updated_at !== r.created_at,
             actorName: r.evaluator?.full_name ?? "—",
             courseName: r.courses?.name ?? "—",
+            refTable: "class_evaluations",
+            refId: r.id,
             title: r.subject
               ? `Registró clase de ${r.subject}`
               : "Registró observaciones del día",
@@ -131,12 +174,14 @@ export function HistoryFeed() {
           eventType: e.type,
           generalDelta: e.general_delta,
           xpDelta: e.xp_delta,
+          refTable: e.reference_table,
+          refId: e.reference_id,
         })
       )
 
       return [...regs, ...events]
         .sort((a, b) => (a.at < b.at ? 1 : -1))
-        .slice(0, 50)
+        .slice(0, 120)
     },
     refetchInterval: 60_000,
   })
@@ -254,11 +299,50 @@ export function HistoryFeed() {
                     )}
                   </div>
                 )}
+                {isAdmin &&
+                  item.refTable &&
+                  DELETABLE_TABLES.includes(item.refTable) && (
+                    <button
+                      type="button"
+                      onClick={() => setToDelete(item)}
+                      title="Eliminar este registro"
+                      className="text-muted-foreground shrink-0 rounded-md p-1.5 hover:bg-red-50 hover:text-red-600"
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
+                  )}
               </div>
             )
           })}
         </div>
       )}
+
+      {/* Confirmación de eliminación */}
+      <Dialog open={toDelete !== null} onOpenChange={(o) => !o && setToDelete(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>¿Eliminar este registro?</DialogTitle>
+            <DialogDescription>
+              Se eliminará <b>{toDelete?.title}</b> ({toDelete?.courseName}) y el
+              puntaje del curso se corregirá automáticamente. Esta acción no se
+              puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setToDelete(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={pending}
+            >
+              {pending && <Loader2 className="mr-2 size-4 animate-spin" />}
+              Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

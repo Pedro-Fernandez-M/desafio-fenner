@@ -638,6 +638,10 @@ export interface Database {
         Args: Record<string, never>
         Returns: number
       }
+      admin_undo: {
+        Args: { p_table: string; p_id: string }
+        Returns: undefined
+      }
       try_scheduled_publish: {
         Args: Record<string, never>
         Returns: undefined

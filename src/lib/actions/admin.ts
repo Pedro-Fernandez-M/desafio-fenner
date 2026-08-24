@@ -40,6 +40,26 @@ export async function publishRanking(): Promise<Result> {
   return { ok: true }
 }
 
+/** Elimina un registro erróneo y revierte su efecto en el puntaje. */
+export async function undoRecord(
+  table: string,
+  id: string
+): Promise<Result> {
+  const guard = await requireAdmin()
+  if (guard) return guard
+
+  const supabase = await createClient()
+  const { error } = await supabase.rpc("admin_undo", {
+    p_table: table,
+    p_id: id,
+  })
+  if (error) return { ok: false, error: error.message }
+
+  revalidatePath("/historial")
+  revalidatePath("/ranking")
+  return { ok: true }
+}
+
 /** Consolida el promedio de clases de profesores (se automatiza los viernes). */
 export async function consolidateClasses(): Promise<
   { ok: true; count: number } | { ok: false; error: string }
