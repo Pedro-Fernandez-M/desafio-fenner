@@ -439,6 +439,10 @@ export interface Database {
           semester_id: string
           week_number: number
           total_points: number
+          teacher_points: number
+          teacher_consolidated: number
+          conviv_points: number
+          conviv_posted: number
           updated_at: string
         }
         Insert: {
@@ -446,6 +450,10 @@ export interface Database {
           semester_id: string
           week_number: number
           total_points?: number
+          teacher_points?: number
+          teacher_consolidated?: number
+          conviv_points?: number
+          conviv_posted?: number
         }
         Update: Partial<
           Database["public"]["Tables"]["class_week_totals"]["Insert"]

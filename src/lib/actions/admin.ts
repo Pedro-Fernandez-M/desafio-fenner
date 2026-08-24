@@ -40,20 +40,157 @@ export async function publishRanking(): Promise<Result> {
   return { ok: true }
 }
 
-/** Elimina un registro erróneo y revierte su efecto en el puntaje. */
+const POINTS: Record<number, number> = { 0: 0, 1: 10, 2: 20, 3: 30 }
+
+/**
+ * Elimina un registro erróneo y revierte su efecto en el puntaje. Se hace con
+ * el cliente service-role (solo admin), insertando un ajuste compensatorio para
+ * que course_standings se corrija por el trigger.
+ */
 export async function undoRecord(
   table: string,
   id: string
 ): Promise<Result> {
   const guard = await requireAdmin()
   if (guard) return guard
+  if (!hasServiceKey()) {
+    return {
+      ok: false,
+      error: "Falta SUPABASE_SERVICE_ROLE_KEY en el entorno del servidor.",
+    }
+  }
 
-  const supabase = await createClient()
-  const { error } = await supabase.rpc("admin_undo", {
-    p_table: table,
-    p_id: id,
-  })
-  if (error) return { ok: false, error: error.message }
+  const admin = createAdminClient()
+
+  const EVENT_TABLES = ["penalties", "bonuses", "recycling_records", "redemptions"]
+
+  if (EVENT_TABLES.includes(table)) {
+    // Las 4 tablas comparten columnas id/course_id/semester_id.
+    const t = table as "penalties"
+    const { data: src } = await admin
+      .from(t)
+      .select("course_id, semester_id")
+      .eq("id", id)
+      .maybeSingle()
+    if (!src) return { ok: false, error: "Registro no encontrado." }
+
+    const { data: evs } = await admin
+      .from("score_events")
+      .select("general_delta, xp_delta")
+      .eq("reference_table", table)
+      .eq("reference_id", id)
+    const gen = (evs ?? []).reduce((s, e) => s + e.general_delta, 0)
+    const xp = (evs ?? []).reduce((s, e) => s + e.xp_delta, 0)
+
+    if (gen !== 0 || xp !== 0) {
+      await admin.from("score_events").insert({
+        course_id: src.course_id,
+        semester_id: src.semester_id,
+        type: "ajuste",
+        general_delta: -gen,
+        xp_delta: -xp,
+        description: "Anulación de registro",
+      })
+    }
+    await admin.from(t).delete().eq("id", id)
+  } else if (table === "class_evaluations") {
+    const { data: ce } = await admin
+      .from("class_evaluations")
+      .select("course_id, semester_id, week_number")
+      .eq("id", id)
+      .maybeSingle()
+    if (!ce) return { ok: false, error: "Registro no encontrado." }
+
+    await admin.from("class_evaluation_scores").delete().eq("class_evaluation_id", id)
+    await admin.from("class_evaluations").delete().eq("id", id)
+
+    // Recomputar promedio por indicador de la semana
+    const { data: evals } = await admin
+      .from("class_evaluations")
+      .select("id")
+      .eq("course_id", ce.course_id)
+      .eq("semester_id", ce.semester_id)
+      .eq("week_number", ce.week_number)
+    const evalIds = (evals ?? []).map((e) => e.id)
+
+    const { data: inds } = await admin
+      .from("indicators")
+      .select("id, assigned_group")
+    const groupOf = new Map(
+      (inds ?? []).map((i) => [i.id, i.assigned_group as string])
+    )
+
+    let tt = 0
+    let ct = 0
+    if (evalIds.length > 0) {
+      const { data: scores } = await admin
+        .from("class_evaluation_scores")
+        .select("indicator_id, level")
+        .in("class_evaluation_id", evalIds)
+      const byInd = new Map<string, number[]>()
+      for (const s of scores ?? []) {
+        if (!byInd.has(s.indicator_id)) byInd.set(s.indicator_id, [])
+        byInd.get(s.indicator_id)!.push(s.level)
+      }
+      for (const [indId, levels] of byInd) {
+        const avg = levels.reduce((a, b) => a + b, 0) / levels.length
+        const pts = POINTS[Math.round(avg)] ?? 0
+        if (groupOf.get(indId) === "profesores") tt += pts
+        else ct += pts
+      }
+    }
+
+    const { data: cwt } = await admin
+      .from("class_week_totals")
+      .select("conviv_posted, teacher_consolidated")
+      .eq("course_id", ce.course_id)
+      .eq("semester_id", ce.semester_id)
+      .eq("week_number", ce.week_number)
+      .maybeSingle()
+    if (!cwt) {
+      revalidatePath("/historial")
+      revalidatePath("/ranking")
+      return { ok: true }
+    }
+
+    const convivDelta = ct - cwt.conviv_posted
+    if (convivDelta !== 0) {
+      await admin.from("score_events").insert({
+        course_id: ce.course_id,
+        semester_id: ce.semester_id,
+        type: "evaluacion",
+        general_delta: convivDelta * 2,
+        xp_delta: convivDelta,
+        description: "Ajuste convivencia (anulación)",
+      })
+    }
+    const teacherDelta = tt - cwt.teacher_consolidated
+    if (cwt.teacher_consolidated !== 0 && teacherDelta !== 0) {
+      await admin.from("score_events").insert({
+        course_id: ce.course_id,
+        semester_id: ce.semester_id,
+        type: "evaluacion",
+        general_delta: teacherDelta * 2,
+        xp_delta: teacherDelta,
+        description: "Ajuste clases (anulación)",
+      })
+    }
+    await admin
+      .from("class_week_totals")
+      .update({
+        teacher_points: tt,
+        conviv_points: ct,
+        conviv_posted: ct,
+        teacher_consolidated:
+          cwt.teacher_consolidated !== 0 ? tt : cwt.teacher_consolidated,
+        total_points: tt + ct,
+      })
+      .eq("course_id", ce.course_id)
+      .eq("semester_id", ce.semester_id)
+      .eq("week_number", ce.week_number)
+  } else {
+    return { ok: false, error: "Tipo de registro no soportado." }
+  }
 
   revalidatePath("/historial")
   revalidatePath("/ranking")
