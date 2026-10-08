@@ -38,6 +38,12 @@ const STYLES: Record<
   },
 }
 
+const MEDAL_BY_POSITION: Record<number, string> = {
+  1: "🥇",
+  2: "🥈",
+  3: "🥉",
+}
+
 function initials(name: string) {
   return name.replace(/[^0-9A-Za-z°]/g, "").slice(0, 3).toUpperCase()
 }
@@ -90,7 +96,9 @@ function Pedestal({
         style={{ height: grown ? s.h : 0 }}
       >
         <div className="mt-3 flex flex-col items-center">
-          <span className="text-3xl drop-shadow sm:text-4xl">{s.medal}</span>
+          <span className="text-3xl drop-shadow sm:text-4xl">
+            {MEDAL_BY_POSITION[entry.position] ?? s.medal}
+          </span>
           <span className="text-2xl font-black text-slate-900/70 sm:text-3xl">
             {entry.position}°
           </span>
