@@ -42,14 +42,22 @@ function initials(name: string) {
   return name.replace(/[^0-9A-Za-z°]/g, "").slice(0, 3).toUpperCase()
 }
 
-function Pedestal({ entry, delay }: { entry: PodiumEntry; delay: number }) {
+function Pedestal({
+  entry,
+  rank,
+  delay,
+}: {
+  entry: PodiumEntry
+  rank: number
+  delay: number
+}) {
   const [grown, setGrown] = useState(false)
   useEffect(() => {
     const t = setTimeout(() => setGrown(true), delay)
     return () => clearTimeout(t)
   }, [delay])
 
-  const s = STYLES[entry.position]
+  const s = STYLES[rank]
 
   return (
     <div className="flex w-1/3 max-w-[180px] flex-col items-center">
@@ -93,15 +101,17 @@ function Pedestal({ entry, delay }: { entry: PodiumEntry; delay: number }) {
 }
 
 export function Podium({ top3 }: { top3: PodiumEntry[] }) {
-  const first = top3.find((e) => e.position === 1)
-  const second = top3.find((e) => e.position === 2)
-  const third = top3.find((e) => e.position === 3)
+  // Se ubican por ORDEN (no por el número de posición), para que el podio
+  // muestre siempre los 3 primeros aunque haya empates (ej. dos cursos en 1°).
+  const first = top3[0]
+  const second = top3[1]
+  const third = top3[2]
 
   return (
     <div className="flex items-end justify-center gap-2 sm:gap-4">
-      {second && <Pedestal entry={second} delay={250} />}
-      {first && <Pedestal entry={first} delay={0} />}
-      {third && <Pedestal entry={third} delay={450} />}
+      {second && <Pedestal entry={second} rank={2} delay={250} />}
+      {first && <Pedestal entry={first} rank={1} delay={0} />}
+      {third && <Pedestal entry={third} rank={3} delay={450} />}
     </div>
   )
 }
