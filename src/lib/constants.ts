@@ -86,7 +86,7 @@ export const NAV_ACCESS: Record<NavKey, Role[]> = {
   bonos: ["administrador", "direccion"],
   penalizaciones: ["administrador", "inspectoria", "convivencia", "residencia", "direccion"],
   reciclaje: ["administrador", "inspectoria", "convivencia", "direccion"],
-  analisis: ["administrador", "direccion"],
+  analisis: ["administrador", "direccion", "convivencia"],
   admin: ["administrador"],
 }
 
