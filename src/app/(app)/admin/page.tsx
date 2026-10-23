@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Users, ListChecks, ArrowRight, Gift, School } from "lucide-react"
+import { Users, ListChecks, ArrowRight, Gift, School, LineChart } from "lucide-react"
 
 import { requireAccess } from "@/lib/auth"
 import { PageHeader } from "@/components/layout/page-header"
@@ -7,6 +7,14 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
 const SECTIONS = [
+  {
+    href: "/admin/analisis",
+    icon: LineChart,
+    title: "Análisis de impacto",
+    description:
+      "¿Mejoró el comportamiento? Evolución por curso y factor + descarga en PPT.",
+    ready: true,
+  },
   {
     href: "/admin/usuarios",
     icon: Users,

@@ -7,6 +7,7 @@ import {
   Sparkles,
   MinusCircle,
   Recycle,
+  LineChart,
   Settings,
   type LucideIcon,
 } from "lucide-react"
@@ -76,6 +77,13 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/reciclaje",
     icon: Recycle,
     description: "Bonus semanal de reciclaje",
+  },
+  {
+    key: "analisis",
+    label: "Análisis",
+    href: "/admin/analisis",
+    icon: LineChart,
+    description: "Impacto del desafío por curso",
   },
   {
     key: "admin",
