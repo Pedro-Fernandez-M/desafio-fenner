@@ -1,6 +1,8 @@
 import { requireAccess, getActiveSemester } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
+import { DESAFIO_CERRADO } from "@/lib/constants"
 import { PageHeader } from "@/components/layout/page-header"
+import { ChallengeClosed } from "@/components/layout/challenge-closed"
 import {
   BonusesManager,
   type BonusItem,
@@ -12,6 +14,7 @@ export const metadata = { title: "Bonos · Desafío Fenner" }
 
 export default async function BonosPage() {
   await requireAccess("bonos")
+  if (DESAFIO_CERRADO) return <ChallengeClosed title="Bonos" />
   const semester = await getActiveSemester()
   const supabase = await createClient()
 

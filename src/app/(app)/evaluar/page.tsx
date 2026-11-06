@@ -1,7 +1,13 @@
 import { requireAccess, getActiveSemester } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
-import { groupForRole, GROUP_LABELS, type IndicatorGroup } from "@/lib/constants"
+import {
+  groupForRole,
+  GROUP_LABELS,
+  DESAFIO_CERRADO,
+  type IndicatorGroup,
+} from "@/lib/constants"
 import { PageHeader } from "@/components/layout/page-header"
+import { ChallengeClosed } from "@/components/layout/challenge-closed"
 import { ClassEvaluationBoard } from "@/components/evaluations/class-evaluation-board"
 import { TeacherScheduleBoard } from "@/components/evaluations/teacher-schedule-board"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -54,6 +60,7 @@ function areasForGroup(allAreas: AreaRow[], group: IndicatorGroup) {
 
 export default async function EvaluarPage() {
   const profile = await requireAccess("evaluar")
+  if (DESAFIO_CERRADO) return <ChallengeClosed title="Registrar" />
   const semester = await getActiveSemester()
   const supabase = await createClient()
 

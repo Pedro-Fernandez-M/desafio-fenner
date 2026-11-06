@@ -1,3 +1,10 @@
+/**
+ * El Desafío está cerrado: el puntaje quedó congelado al 06-nov-2026. Las
+ * páginas de registro muestran "Desafío terminado" en vez de los formularios
+ * (el bloqueo real de escritura vive además en la base, ver cerrar_desafio.sql).
+ */
+export const DESAFIO_CERRADO: boolean = true
+
 export const ROLES = [
   "administrador",
   "profesor",

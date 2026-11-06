@@ -1,6 +1,8 @@
 import { requireAccess, getActiveSemester } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
+import { DESAFIO_CERRADO } from "@/lib/constants"
 import { PageHeader } from "@/components/layout/page-header"
+import { ChallengeClosed } from "@/components/layout/challenge-closed"
 import {
   RecyclingManager,
   type RecyclingItem,
@@ -12,6 +14,7 @@ export const metadata = { title: "Reciclaje · Desafío Fenner" }
 
 export default async function ReciclajePage() {
   await requireAccess("reciclaje")
+  if (DESAFIO_CERRADO) return <ChallengeClosed title="Reciclaje" />
   const semester = await getActiveSemester()
   const supabase = await createClient()
 
